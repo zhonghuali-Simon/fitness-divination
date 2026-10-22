@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>健身算卦 · 今日吃练</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow-x: hidden; overflow-y: auto; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0a0a0a;
+    color: #e8e8e8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 20px 40px;
+    position: relative;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(46,193,103,0.04) 0, rgba(46,193,103,0.04) 1px, transparent 1px, transparent 3px);
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    top: 30%; left: 50%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(46,193,103,0.15), transparent 60%);
+    transform: translate(-50%, -50%);
+    pointer-events: none; z-index: 0;
+    animation: pulse 4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+
+  .container { position: relative; z-index: 1; width: 100%; max-width: 420px; text-align: center; }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    color: #2ec167;
+    text-shadow: 0 0 12px rgba(46,193,103,0.6), 0 0 24px rgba(46,193,103,0.3);
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+  }
+
+  /* 黄历卡片 */
+  .huangli {
+    background: linear-gradient(135deg, rgba(46,193,103,0.06), rgba(46,193,103,0.02));
+    border: 1px solid rgba(46,193,103,0.25);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    backdrop-filter: blur(10px);
+    text-align: left;
+  }
+  .huangli-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .huangli-date {
+    font-size: 13px;
+    color: #2ec167;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .huangli-lucky {
+    font-size: 12px;
+    color: #aaa;
+  }
+  .huangli-lucky span {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 4px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .huangli-yi-ji {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .huangli-yi, .huangli-ji {
+    flex: 1;
+  }
+  .huangli-yi strong { color: #2ec167; }
+  .huangli-ji strong { color: #e74c3c; }
+
+  /* 八卦图 */
+  .bagua-wrap {
+    position: relative;
+    width: 220px; height: 220px;
+    margin: 0 auto 24px;
+  }
+  .bagua {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid #2ec167;
+    box-shadow: 0 0 30px rgba(46,193,103,0.4), inset 0 0 30px rgba(46,193,103,0.2);
+    position: relative;
+    transition: transform 0.3s;
+  }
+  .bagua.spinning { animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+  @keyframes spin {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(1080deg); }
+  }
+  .yin-yang {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 110px; height: 110px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: linear-gradient(90deg, #2ec167 50%, #0a0a0a 50%);
+    overflow: hidden;
+  }
+  .yin-yang::before, .yin-yang::after {
+    content: "";
+    position: absolute;
+    width: 55px; height: 55px;
+    border-radius: 50%;
+  }
+  .yin-yang::before { top: 0; left: 50%; transform: translateX(-50%); background: #2ec167; }
+  .yin-yang::after { bottom: 0; left: 50%; transform: translateX(-50%); background: #0a0a0a; }
+  .dot-light, .dot-dark {
+    position: absolute; width: 14px; height: 14px; border-radius: 50%; z-index: 2;
+  }
+  .dot-light { top: 27px; left: 50%; transform: translateX(-50%); background: #0a0a0a; }
+  .dot-dark { bottom: 27px; left: 50%; transform: translateX(-50%); background: #2ec167; }
+
+  .gua {
+    position: absolute;
+    font-size: 18px;
+    color: #2ec167;
+    text-shadow: 0 0 8px rgba(46,193,103,0.8);
+    font-weight: bold;
+  }
+  .gua:nth-child(1) { top: 8px; left: 50%; transform: translateX(-50%); }
+  .gua:nth-child(2) { top: 36px; right: 16px; }
+  .gua:nth-child(3) { top: 50%; right: 4px; transform: translateY(-50%); }
+  .gua:nth-child(4) { bottom: 36px; right: 16px; }
+  .gua:nth-child(5) { bottom: 8px; left: 50%; transform: translateX(-50%); }
+  .gua:nth-child(6) { bottom: 36px; left: 16px; }
+  .gua:nth-child(7) { top: 50%; left: 4px; transform: translateY(-50%); }
+  .gua:nth-child(8) { top: 36px; left: 16px; }
+
+  .btn {
+    background: transparent;
+    border: 2px solid #2ec167;
+    color: #2ec167;
+    padding: 13px 36px;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    border-radius: 40px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    box-shadow: 0 0 20px rgba(46,193,103,0.3);
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn:hover { background: rgba(46,193,103,0.1); }
+  .btn::before {
+    content: "";
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    background: rgba(46,193,103,0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+  }
+  .btn:active::before { width: 300px; height: 300px; }
+
+  .result {
+    margin-top: 24px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s;
+  }
+  .result.show { opacity: 1; transform: translateY(0); }
+  .result-card {
+    background: linear-gradient(135deg, rgba(46,193,103,0.08), rgba(46,193,103,0.02));
+    border: 1px solid rgba(46,193,103,0.3);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 10px;
+    backdrop-filter: blur(10px);
+  }
+  .result-label {
+    font-size: 12px;
+    color: #2ec167;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .result-value {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(46,193,103,0.5);
+    margin-bottom: 6px;
+  }
+  .result-desc {
+    font-size: 13px;
+    color: #aaa;
+    line-height: 1.5;
+  }
+  .hexagram {
+    font-size: 13px;
+    color: #2ec167;
+    margin-top: 10px;
+    letter-spacing: 1px;
+  }
+  .yao { display: inline-block; margin: 0 2px; }
+  .yao-yang { color: #2ec167; }
+  .yao-yin { color: #888; }
+
+  .food-note {
+    font-size: 12px;
+    color: #666;
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+    font-style: italic;
+  }
+
+  footer {
+    margin-top: 30px;
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>健身算卦</h1>
+    <div class="subtitle">中午吃啥 · 练啥部位</div>
+
+    <!-- 黄历运势 -->
+    <div class="huangli" id="huangli">
+      <div class="huangli-header">
+        <div class="huangli-date" id="huangliDate">—</div>
+        <div class="huangli-lucky">幸运色：<span id="luckyColor"></span><span id="luckyColorName">—</span></div>
+      </div>
+      <div class="huangli-yi-ji">
+        <div class="huangli-yi"><strong>宜</strong> <span id="huangliYi">—</span></div>
+        <div class="huangli-ji"><strong>忌</strong> <span id="huangliJi">—</span></div>
+      </div>
+    </div>
+
+    <div class="bagua-wrap">
+      <div class="bagua" id="bagua">
+        <span class="gua">☰</span><span class="gua">☱</span><span class="gua">☲</span><span class="gua">☳</span>
+        <span class="gua">☴</span><span class="gua">☵</span><span class="gua">☶</span><span class="gua">☷</span>
+        <div class="yin-yang">
+          <div class="dot-light"></div>
+          <div class="dot-dark"></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="divineBtn">起 卦</button>
+
+    <div class="result" id="result">
+      <div class="result-card">
+        <div class="result-label">◉ 今日午餐</div>
+        <div class="result-value" id="foodResult">—</div>
+        <div class="result-desc" id="foodDesc"></div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">◉ 今日训练</div>
+        <div class="result-value" id="trainResult">—</div>
+        <div class="result-desc" id="trainDesc"></div>
+      </div>
+      <div class="hexagram" id="hexagram"></div>
+      <div class="food-note">饭堂没有就自己买！</div>
+    </div>
+  </div>
+
+  <footer>心诚则灵 · 吃饱再练</footer>
+
+<script>
+  // 饭堂饮食分类（基于宜搭西溪A区美食地图数据）
+  const foods = [
+    { name: "米饭套餐", desc: "自选大荤+半荤+蔬菜，管饱", hex: "饱食禄" },
+    { name: "面食", desc: "面条/拉面/刀削面，热汤暖胃", hex: "长顺卦" },
+    { name: "粉类", desc: "米粉/拌粉/酸辣粉，嗦一口过瘾", hex: "嗦乐卦" },
+    { name: "小碗菜", desc: "家常小炒，丰俭由人", hex: "百味卦" },
+    { name: "烧腊卤味", desc: "烧鸭/叉烧/卤蛋，肉食者狂欢", hex: "肉食禄" },
+    { name: "饺子/馄饨", desc: "手工水饺或馄饨，皮薄馅大", hex: "元宝卦" },
+    { name: "麻辣烫/冒菜", desc: "自选菜品烫一锅，热辣鲜香", hex: "沸腾卦" },
+    { name: "地方风味", desc: "徐州菜/南昌菜/台湾风味等", hex: "四方卦" },
+    { name: "轻食沙拉", desc: "低卡高纤，减脂期友好", hex: "清体卦" },
+    { name: "买水果", desc: "饭堂没有就自己买！补充维C", hex: "鲜果禄" },
+    { name: "代餐", desc: "蛋白棒/奶昔/麦片，快速解决", hex: "速食卦" }
+  ];
+
+  const trains = [
+    { name: "胸 + 三头", desc: "推类日，卧推/飞鸟/下压", hex: "乾·刚健" },
+    { name: "背 + 二头", desc: "拉类日，引体/划船/弯举", hex: "坤·厚德" },
+    { name: "腿日", desc: "深蹲硬拉，别怂就是干", hex: "震·奋起" },
+    { name: "肩 + 斜方", desc: "三角中后束，穿衣显瘦", hex: "巽·入微" },
+    { name: "手臂专项", desc: "二头三头超级组，泵感拉满", hex: "坎·流转" },
+    { name: "核心 + 有氧", desc: "腹肌轮+30min有氧，刷脂向", hex: "离·明照" },
+    { name: "全身 HIIT", desc: "20分钟高强度，时间紧救星", hex: "兑·喜悦" },
+    { name: "休息日", desc: "卦象说今天宜躺平，听天的", hex: "艮·止息" }
+  ];
+
+  // 黄历宜忌词库（健身+饮食+办公+生活融合）
+  const yiPool = [
+    // 饮食
+    "加餐蛋白质", "吃粗粮", "喝黑咖啡", "补充碳水", "吃深色蔬菜",
+    "多喝水", "吃牛肉", "吃鱼虾", "吃鸡蛋", "吃水果",
+    "吃糙米", "吃坚果", "来杯绿茶", "吃根香蕉",
+    // 训练
+    "练大肌群", "早睡养肌", "拉伸放松", "练腿日", "核心训练",
+    "有氧30分钟", "练背日", "泡沫轴放松", "做组俯卧撑", "走楼梯不坐电梯",
+    // 办公
+    "站立办公半小时", "站起来接水", "午后散步10分钟", "做眼保健操",
+    "整理工位", "和同事聊聊天", "提前完成今日TODO", "摸鱼5分钟充电",
+    "下午早点下班", "换个工位坐", "开窗通风", "听首好歌提提神"
+  ];
+  const jiPool = [
+    // 饮食
+    "熬夜", "吃油炸", "跳过早餐", "喝奶茶", "吃甜食",
+    "暴饮暴食", "吃宵夜", "喝碳酸饮料", "吃辛辣", "吃外卖烧烤",
+    "喝酒", "吃零食", "空腹训练",
+    // 办公
+    "加班", "久坐超2小时", "翘二郎腿", "盯屏幕不休息", "摸鱼刷短视频",
+    "开无意义的会", "在工位吃螺蛳粉", "下班后回工作消息", "熬夜赶PPT",
+    "跟同事内卷", "周一就摆烂", "开会走神被点名", "把咖啡当水喝"
+  ];
+
+  // 幸运色
+  const luckyColors = [
+    { name: "荧光绿", hex: "#2ec167" },
+    { name: "活力橙", hex: "#ff8c42" },
+    { name: "能量红", hex: "#e74c3c" },
+    { name: "深邃蓝", hex: "#3498db" },
+    { name: "神秘紫", hex: "#9b59b6" },
+    { name: "阳光黄", hex: "#f1c40f" },
+    { name: "清新青", hex: "#1abc9c" },
+    { name: "玫瑰粉", hex: "#e91e63" }
+  ];
+
+  const btn = document.getElementById('divineBtn');
+  const bagua = document.getElementById('bagua');
+  const result = document.getElementById('result');
+
+  function random(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // 初始化黄历
+  function initHuangli() {
+    const now = new Date();
+    const months = ['正','二','三','四','五','六','七','八','九','十','冬','腊'];
+    const days = ['初一','初二','初三','初四','初五','初六','初七','初八','初九','初十',
+      '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
+      '廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+    const weekDays = ['日','一','二','三','四','五','六'];
+    const lunarStr = `${months[now.getMonth()]}月${days[now.getDate()-1]} 周${weekDays[now.getDay()]}`;
+    document.getElementById('huangliDate').textContent = lunarStr;
+
+    const color = random(luckyColors);
+    document.getElementById('luckyColor').style.background = color.hex;
+    document.getElementById('luckyColorName').textContent = color.name;
+
+    const yiItems = shuffle(yiPool).slice(0, 5);
+    const jiItems = shuffle(jiPool).slice(0, 4);
+    document.getElementById('huangliYi').textContent = yiItems.join('、');
+    document.getElementById('huangliJi').textContent = jiItems.join('、');
+  }
+
+  function buildHex() {
+    const yaoYang = '━━━━━', yaoYin = '━━ ━━';
+    let lines = [];
+    for (let i = 0; i < 6; i++) {
+      const isYang = Math.random() > 0.5;
+      lines.push(`<span class="yao ${isYang ? 'yao-yang' : 'yao-yin'}">${isYang ? yaoYang : yaoYin}</span>`);
+    }
+    return lines.reverse().join('<br>');
+  }
+
+  // 页面加载时初始化黄历
+  initHuangli();
+
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    result.classList.remove('show');
+    bagua.classList.add('spinning');
+
+    setTimeout(() => {
+      const food = random(foods);
+      const train = random(trains);
+
+      document.getElementById('foodResult').textContent = food.name;
+      document.getElementById('foodDesc').textContent = food.desc;
+      document.getElementById('trainResult').textContent = train.name;
+      document.getElementById('trainDesc').textContent = train.desc;
+      document.getElementById('hexagram').innerHTML =
+        `本卦：${train.hex} · ${food.hex}<br>${buildHex()}`;
+
+      bagua.classList.remove('spinning');
+      result.classList.add('show');
+      btn.disabled = false;
+    }, 1300);
+  });
+</script>
+</body>
+</html>
